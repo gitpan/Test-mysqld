@@ -1,6 +1,9 @@
 Revision history for Perl extension Test::mysqld.
 
-0.02  Wed Aug 05:00:00:01 2009
+0.03  Wed Aug 05 00:00:02 2009
+	- fix bug that causes somewhat strange behaviour in I/O (see svn)
+
+0.02  Wed Aug 05 00:00:01 2009
 	- permit mysqld to run under root privileges
 
 0.01  Wed Aug 05 00:00:00 2009

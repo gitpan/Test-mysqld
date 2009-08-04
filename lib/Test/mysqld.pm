@@ -9,7 +9,7 @@ use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 my %Defaults = (
     auto_start       => 2,
@@ -142,7 +142,10 @@ sub setup {
             $self->mysql_install_db . " --defaults-file='" . $self->base_dir
                 . "/etc/my.cnf' 2>&1",
         ) or die "failed to spawn mysql_install_db:$!";
-        my $output = do { undef $/; join "", join "\n", <$fh> };
+        my $output;
+        while (my $l = <$fh>) {
+            $output .= $l;
+        }
         close $fh
             or die "*** mysql_install_db failed ***\n$output\n";
     }

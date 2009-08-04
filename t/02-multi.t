@@ -5,21 +5,11 @@ use DBI;
 use Test::More;
 use Test::mysqld;
 
-{ # look for required progs, or skip all
-    local $@;
-    eval {
-        Test::mysqld::_find_program(qw/mysql_install_db bin scripts/);
-    };
-    if ($@) {
-        plan skip_all => 'could not find mysql_install_db';
-    }
-    eval {
-        Test::mysqld::_find_program(qw/mysqld bin libexec/);
-    };
-    if ($@) {
-        plan skip_all => 'could not find mysqld';
-    }
-}
+Test::mysqld->new(
+    my_cnf => {
+        'skip-networking' => '',
+    },
+) or plan skip_all => $Test::mysqld::errstr;
 
 plan tests => 3;
 

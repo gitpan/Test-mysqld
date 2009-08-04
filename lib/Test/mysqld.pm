@@ -9,7 +9,10 @@ use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
+
+our $errstr;
+our @SEARCH_PATHS = qw(/usr/local/mysql);
 
 my %Defaults = (
     auto_start       => 2,
@@ -44,10 +47,16 @@ sub new {
     $self->my_cnf->{socket} ||= $self->base_dir . "/tmp/mysql.sock";
     $self->my_cnf->{datadir} ||= $self->base_dir . "/var";
     $self->my_cnf->{'pid-file'} ||= $self->base_dir . "/tmp/mysqld.pid";
-    $self->mysql_install_db(_find_program(qw/mysql_install_db bin scripts/))
-        unless $self->mysql_install_db;
-    $self->mysqld(_find_program(qw/mysqld bin libexec/))
-        unless $self->mysqld;
+    if (! defined $self->mysql_install_db) {
+        my $prog = _find_program(qw/mysql_install_db bin scripts/)
+            or return;
+        $self->mysql_install_db($prog);
+    }
+    if (! defined $self->mysqld) {
+        my $prog = _find_program(qw/mysqld bin libexec/)
+            or return;
+        $self->mysqld($prog);
+    }
     die 'mysqld is already running (' . $self->my_cnf->{'pid-file'} . ')'
         if -e $self->my_cnf->{'pid-file'};
     if ($self->auto_start) {
@@ -153,10 +162,12 @@ sub setup {
 
 sub _find_program {
     my ($prog, @subdirs) = @_;
+    undef $errstr;
     my $path = _get_path_of($prog);
     return $path
         if $path;
-    for my $mysql (_get_path_of('mysql'), qw(/usr/local/mysql/bin/mysql)) {
+    for my $mysql (_get_path_of('mysql'),
+                   map { "$_/bin/mysql" } @SEARCH_PATHS) {
         if (-x $mysql) {
             for my $subdir (@subdirs) {
                 $path = $mysql;
@@ -167,7 +178,8 @@ sub _find_program {
             }
         }
     }
-    die "could not find $prog";
+    $errstr = "could not find $prog, please set appropriate PATH";
+    return;
 }
 
 sub _get_path_of {
@@ -189,12 +201,16 @@ Test::mysqld - mysqld runner for tests
 
   use DBI;
   use Test::mysqld;
+  use Test::More;
   
   my $mysqld = Test::mysqld->new(
     my_cnf => {
       'skip-networking' => '', # no TCP socket
     }
-  );
+  ) or plan skip_all => $Test::mysqld::errstr;
+  
+  plan tests => XXX;
+  
   my $dbh = DBI->connect(
     "DBI:mysql:...;mysql_socket=" . $mysqld->base_dir . "/tmp/mysql.sock",
     ...
@@ -208,7 +224,7 @@ C<Test::mysqld> automatically setups a mysqld instance in a temporary directory,
 
 =head2 new
 
-Create and run a mysqld instance.  The instance is terminated when the returned object is being DESTROYed.
+Create and run a mysqld instance.  The instance is terminated when the returned object is being DESTROYed.  If required programs (mysql_install_db and mysqld) were not found, the function returns undef and sets appropriate message to $Test::mysqld::errstr.
 
 =head2 base_dir
 

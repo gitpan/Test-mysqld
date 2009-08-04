@@ -9,7 +9,7 @@ use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 my %Defaults = (
     auto_start       => 2,
@@ -82,6 +82,7 @@ sub start {
         exec(
             $self->mysqld,
             '--defaults-file=' . $self->base_dir . '/etc/my.cnf',
+            '--user=root',
         );
         die "failed to launch mysqld:$?";
     }

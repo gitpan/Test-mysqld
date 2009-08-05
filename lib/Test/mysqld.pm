@@ -9,7 +9,7 @@ use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = 0.04;
+our $VERSION = 0.05;
 
 our $errstr;
 our @SEARCH_PATHS = qw(/usr/local/mysql);
@@ -145,12 +145,14 @@ sub setup {
     close $fh;
     # mysql_install_db
     if (! -d $self->base_dir . '/var/mysql') {
-        open(
-            $fh,
-            '-|',
-            $self->mysql_install_db . " --defaults-file='" . $self->base_dir
-                . "/etc/my.cnf' 2>&1",
-        ) or die "failed to spawn mysql_install_db:$!";
+        my $cmd = $self->mysql_install_db;
+        my $mysql_base_dir = $self->mysql_install_db;
+        if ($mysql_base_dir =~ s|/[^/]+/mysql_install_db$||) {
+            $cmd .= " --basedir='$mysql_base_dir'";
+        }
+        $cmd .= " --defaults-file='" . $self->base_dir . "/etc/my.cnf' 2>&1";
+        open $fh, '-|', $cmd
+            or die "failed to spawn mysql_install_db:$!";
         my $output;
         while (my $l = <$fh>) {
             $output .= $l;

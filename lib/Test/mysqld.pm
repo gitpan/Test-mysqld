@@ -9,7 +9,7 @@ use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = 0.05;
+our $VERSION = 0.06;
 
 our $errstr;
 our @SEARCH_PATHS = qw(/usr/local/mysql);
@@ -189,6 +189,8 @@ sub _get_path_of {
     my $path = `which $prog 2> /dev/null`;
     chomp $path
         if $path;
+    $path = ''
+        unless -x $path;
     $path;
 }
 

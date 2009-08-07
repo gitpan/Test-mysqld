@@ -1,8 +1,7 @@
 Test::mysqld
 ===========================
 
-Test::mysqld is a source filter that allows you to embed SQL statements
-within perl.
+Test::mysqld is mysqld runner for tests.
 
 INSTALLATION
 

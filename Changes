@@ -1,5 +1,8 @@
 Revision history for Perl extension Test::mysqld.
 
+0.06  Fri Aug 07 09:33:00 2009
+	- fix misdetection of mysql programs on Solaris
+
 0.05  Thu Aug 06 05:00:00 2009
 	- pass --basedir to mysql_install_db (or would not work if mysql was installed into a different directory than that specified as build option)
 

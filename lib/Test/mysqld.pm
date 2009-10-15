@@ -3,13 +3,15 @@ package Test::mysqld;
 use strict;
 use warnings;
 
+use 5.008;
 use Class::Accessor::Lite;
 use Cwd;
+use DBI;
 use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = 0.06;
+our $VERSION = '0.07';
 
 our $errstr;
 our @SEARCH_PATHS = qw(/usr/local/mysql);
@@ -73,6 +75,18 @@ sub DESTROY {
         if defined $self->pid;
 }
 
+sub dsn {
+    my ($self, %args) = @_;
+    $args{port} ||= $self->my_cnf->{port}
+        if $self->my_cnf->{port};
+    unless (defined $args{port}) {
+        $args{mysql_socket} ||= $self->my_cnf->{socket};
+    }
+    $args{user} ||= 'root';
+    $args{dbname} ||= 'test';
+    return 'DBI:mysql:' . join(';', map { "$_=$args{$_}" } sort keys %args);
+}
+
 sub start {
     my $self = shift;
     return
@@ -110,6 +124,12 @@ sub start {
         sleep 0.1;
     }
     $self->pid($pid);
+    { # create 'test' database
+        my $dbh = DBI->connect($self->dsn(dbname => 'mysql'))
+            or die $DBI::errstr;
+        $dbh->do('CREATE DATABASE IF NOT EXISTS test')
+            or die $dbh->errstr;
+    }
 }
 
 sub stop {
@@ -216,8 +236,7 @@ Test::mysqld - mysqld runner for tests
   plan tests => XXX;
   
   my $dbh = DBI->connect(
-    "DBI:mysql:...;mysql_socket=" . $mysqld->base_dir . "/tmp/mysql.sock",
-    ...
+    $mysqld->dsn(dbname => 'test'),
   );
 
 =head1 DESCRIPTION
@@ -243,6 +262,10 @@ A hash containing the list of name=value pairs to be written into my.cnf.  The p
 =head2 mysqld
 
 Path to C<mysql_install_db> script or C<mysqld> program bundled to the mysqld distribution.  If not set, the program is automatically search by looking up $PATH and other prefixed directories.
+
+=head2 dsn
+
+Builds and returns dsn by using given parameters (if any).  Default username is 'root', and dbname is 'test'.
 
 =head2 pid
 

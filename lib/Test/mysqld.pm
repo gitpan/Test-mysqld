@@ -11,7 +11,7 @@ use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 our $errstr;
 our @SEARCH_PATHS = qw(/usr/local/mysql);
@@ -79,7 +79,9 @@ sub dsn {
     my ($self, %args) = @_;
     $args{port} ||= $self->my_cnf->{port}
         if $self->my_cnf->{port};
-    unless (defined $args{port}) {
+    if (defined $args{port}) {
+        $args{host} ||= $self->my_cnf->{'bind-address'} || '127.0.0.1';
+    } else {
         $args{mysql_socket} ||= $self->my_cnf->{socket};
     }
     $args{user} ||= 'root';

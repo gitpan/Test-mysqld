@@ -11,7 +11,7 @@ use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 our $errstr;
 our @SEARCH_PATHS = qw(/usr/local/mysql);
@@ -51,13 +51,14 @@ sub new {
     $self->my_cnf->{socket} ||= $self->base_dir . "/tmp/mysql.sock";
     $self->my_cnf->{datadir} ||= $self->base_dir . "/var";
     $self->my_cnf->{'pid-file'} ||= $self->base_dir . "/tmp/mysqld.pid";
+    $self->my_cnf->{tmpdir} ||= $self->base_dir . "/tmp";
     if (! defined $self->mysql_install_db) {
         my $prog = _find_program(qw/mysql_install_db bin scripts/)
             or return;
         $self->mysql_install_db($prog);
     }
     if (! defined $self->mysqld) {
-        my $prog = _find_program(qw/mysqld bin libexec/)
+        my $prog = _find_program(qw/mysqld bin libexec sbin/)
             or return;
         $self->mysqld($prog);
     }

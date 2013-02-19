@@ -11,7 +11,7 @@ use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 our $errstr;
 our @SEARCH_PATHS = qw(/usr/local/mysql);
@@ -62,9 +62,9 @@ sub new {
             or return;
         $self->mysqld($prog);
     }
-    die 'mysqld is already running (' . $self->my_cnf->{'pid-file'} . ')'
-        if -e $self->my_cnf->{'pid-file'};
     if ($self->auto_start) {
+        die 'mysqld is already running (' . $self->my_cnf->{'pid-file'} . ')'
+            if -e $self->my_cnf->{'pid-file'};
         $self->setup
             if $self->auto_start >= 2;
         $self->start;

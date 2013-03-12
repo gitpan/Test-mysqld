@@ -17,3 +17,8 @@ t/01-raii.t
 t/02-multi.t
 t/03-not-found.t
 t/04-multiprocess.t
+xt/parallel/10.t
+xt/parallel/11.t
+xt/parallel/12.t
+xt/parallel/13.t
+xt/parallel/14.t

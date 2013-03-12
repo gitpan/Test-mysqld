@@ -11,7 +11,7 @@ use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 our $errstr;
 our @SEARCH_PATHS = qw(/usr/local/mysql);
@@ -176,6 +176,12 @@ sub setup {
         # We should specify --defaults-file option first.
         $cmd .= " --defaults-file='" . $self->base_dir . "/etc/my.cnf'";
         my $mysql_base_dir = $self->mysql_install_db;
+        if (-l $mysql_base_dir) {
+            require File::Spec;
+            require File::Basename;
+            my $base = File::Basename::dirname($mysql_base_dir);
+            $mysql_base_dir = File::Spec->rel2abs(readlink($mysql_base_dir), $base);
+        }
         if ($mysql_base_dir =~ s|/[^/]+/mysql_install_db$||) {
             $cmd .= " --basedir='$mysql_base_dir'";
         }

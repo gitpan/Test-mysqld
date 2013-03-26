@@ -7,11 +7,12 @@ use 5.008;
 use Class::Accessor::Lite;
 use Cwd;
 use DBI;
+use File::Copy::Recursive qw(dircopy);
 use File::Temp qw(tempdir);
 use POSIX qw(SIGTERM WNOHANG);
 use Time::HiRes qw(sleep);
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 our $errstr;
 our @SEARCH_PATHS = qw(/usr/local/mysql);
@@ -23,6 +24,7 @@ my %Defaults = (
     mysql_install_db => undef,
     mysqld           => undef,
     pid              => undef,
+    copy_data_from   => undef,
     _owner_pid       => undef,
 );
 
@@ -117,14 +119,7 @@ sub start {
     close $logfh;
     while (! -e $self->my_cnf->{'pid-file'}) {
         if (waitpid($pid, WNOHANG) > 0) {
-            die "*** failed to launch mysqld ***\n" . do {
-                my $log = '';
-                if (open $logfh, '<', $self->base_dir . '/tmp/mysqld.log') {
-                    $log = do { local $/; <$logfh> };
-                    close $logfh;
-                }
-                $log;
-            };
+            die "*** failed to launch mysqld ***\n" . $self->read_log;
         }
         sleep 0.1;
     }
@@ -158,6 +153,14 @@ sub setup {
     mkdir $self->base_dir;
     for my $subdir (qw/etc var tmp/) {
         mkdir $self->base_dir . "/$subdir";
+    }
+    # copy data files
+    if ($self->copy_data_from) {
+        dircopy($self->copy_data_from, $self->my_cnf->{datadir})
+            or die(
+                "could not dircopy @{[$self->copy_data_from]} to "
+                    . "@{[$self->my_cnf->{datadir}]}:$!"
+                );
     }
     # my.cnf
     open my $fh, '>', $self->base_dir . '/etc/my.cnf'
@@ -195,6 +198,13 @@ sub setup {
         close $fh
             or die "*** mysql_install_db failed ***\n$output\n";
     }
+}
+
+sub read_log {
+    my $self = shift;
+    open my $logfh, '<', $self->base_dir . '/tmp/mysqld.log'
+        or die "failed to open file:tmp/mysql.log:$!";
+    do { local $/; <$logfh> };
 }
 
 sub _find_program {
@@ -268,6 +278,10 @@ Create and run a mysqld instance.  The instance is terminated when the returned 
 
 Returns directory under which the mysqld instance is being created.  The property can be set as a parameter of the C<new> function, in which case the directory will not be removed at exit.
 
+=head2 copy_data_from
+
+If specified, uses a copy of the specified directory as the data directory of MySQL.  "Mysql" database (which is used to store admistrative information) is automatically created if necessary by invoking mysql_install_db.
+
 =head2 my_cnf
 
 A hash containing the list of name=value pairs to be written into my.cnf.  The property can be set as a parameter of the C<new> function.
@@ -297,6 +311,10 @@ Stops mysqld.
 =head2 setup
 
 Setups the mysqld instance.
+
+=head2 read_log
+
+Returns the contents of the mysqld log file.
 
 =head1 COPYRIGHT
 

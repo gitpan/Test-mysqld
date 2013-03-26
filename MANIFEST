@@ -17,6 +17,10 @@ t/01-raii.t
 t/02-multi.t
 t/03-not-found.t
 t/04-multiprocess.t
+t/05-copy-data-from.t
+t/05-copy-data-from/test/hello.frm
+t/05-copy-data-from/test/hello.MYD
+t/05-copy-data-from/test/hello.MYI
 xt/parallel/10.t
 xt/parallel/11.t
 xt/parallel/12.t
